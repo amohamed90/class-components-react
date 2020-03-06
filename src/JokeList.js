@@ -9,6 +9,8 @@ class JokeList extends Component {
   constructor(props) {
     super(props);
     this.state = { jokes: [] };
+    this.vote = this.vote.bind(this);
+    this.generateNewJokes = this.generateNewJokes.bind(this);
   }
 
   static defaultProps = {
@@ -18,10 +20,10 @@ class JokeList extends Component {
   /* get jokes if there are no jokes */
 
   async componentDidMount() {
-    let j = [...this.jokes];
+    let j = [...this.state.jokes];
     let seenJokes = new Set();
     try {
-      while (j.length < this.numJokesToGet) {
+      while (j.length < this.props.numJokesToGet) {
         let res = await axios.get("https://icanhazdadjoke.com", {
           headers: { Accept: "application/json" }
         });
@@ -41,11 +43,14 @@ class JokeList extends Component {
   }
 
   async componentDidUpdate(prevProps, prevState) {
-    if (prevProps.numJokesToGet !== this.props.numJokesToGet || prevState.jokes !== this.prevState.jokes) {
-      let j = [...this.jokes];
+
+    console.log("PREV STATE", JSON.stringify(prevState.jokes))
+    console.log("CURRENT STATE", JSON.stringify(this.state.jokes))
+    if (prevProps.numJokesToGet !== this.props.numJokesToGet || JSON.stringify(prevState.jokes) !== JSON.stringify(this.state.jokes)) {
+      let j = [...this.state.jokes];
       let seenJokes = new Set();
       try {
-        while (j.length < this.numJokesToGet) {
+        while (j.length < this.props.numJokesToGet) {
           let res = await axios.get("https://icanhazdadjoke.com", {
             headers: { Accept: "application/json" }
           });
@@ -75,16 +80,18 @@ class JokeList extends Component {
   /* change vote for this id by delta (+1 or -1) */
 
   vote = (id, delta) => {
+    console.log("GET HERE");
+    const newJokes = this.state.jokes.map(j => (j.id === id ? { ...j, votes: j.votes + delta } : j))
+    console.log({newJokes});
     this.setState({
-      jokes: allJokes =>
-        allJokes.map(j => (j.id === id ? { ...j, votes: j.votes + delta } : j))
+      jokes: newJokes
     });
   }
 
   /* render: either loading spinner or list of sorted jokes. */
   render() {
-    if (this.jokes.length) {
-      let sortedJokes = [...this.jokes].sort((a, b) => b.votes - a.votes);
+    if (this.state.jokes.length) {
+      let sortedJokes = [...this.state.jokes].sort((a, b) => b.votes - a.votes);
 
       return (
         <div className="JokeList">
